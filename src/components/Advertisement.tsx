@@ -1,12 +1,21 @@
 import React, { useEffect, useRef } from 'react';
 import { useInView } from '../hooks/useInView';
-import { useAdTracking } from '../hooks/useAdTracking';
 import { AdUnit } from '../types/prebid';
 import { requestBids } from '../services/prebid';
 import { errorTracker } from '../services/errorTracking';
 import { getFallbackAd } from '../services/fallbackAds';
 import { validateBid } from '../services/bidValidation';
 import { ErrorBoundary } from './ErrorBoundary';
+
+
+declare global {
+  interface Window {
+    googletag: {
+      cmd: Array<() => void>;
+      display: (id: string) => void;
+    };
+  }
+}
 
 interface AdvertisementProps {
   adUnit: AdUnit;
@@ -15,12 +24,11 @@ interface AdvertisementProps {
 export const Advertisement: React.FC<AdvertisementProps> = ({ adUnit }) => {
   const adRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(adRef);
-  const { timeoutId } = useAnalytics();
   
   useEffect(() => {
     if (!isInView) return;
 
-    const timeoutId: number;
+    let timeoutId: NodeJS.Timeout;
     
     const loadAd = async () => {
       try {
