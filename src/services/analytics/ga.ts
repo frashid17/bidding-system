@@ -3,11 +3,12 @@ import { errorTracker } from '../errorTracking';
 declare global {
   interface Window {
     gtag: (...args: any[]) => void;
+    dataLayer: any[];
   }
 }
 
 export class GoogleAnalytics {
-  private readonly GA_MEASUREMENT_ID = 'G-XXXXXXXXXX'; // Replace with your GA4 measurement ID
+  private readonly GA_MEASUREMENT_ID = 'G-WZXR5HVWF4'; 
 
   constructor() {
     this.initializeGA();
@@ -27,7 +28,7 @@ export class GoogleAnalytics {
       window.gtag('js', new Date());
       window.gtag('config', this.GA_MEASUREMENT_ID);
     } catch (error) {
-      errorTracker.trackError('analytics', 'Failed to initialize GA', { error });
+      errorTracker.trackError('bidError', 'Failed to initialize GA', { error });
     }
   }
 
