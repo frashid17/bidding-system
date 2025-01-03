@@ -4,34 +4,25 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
-      screens: {
-        'xs': '375px',
-        'sm': '640px',
-        'md': '768px',
-        'lg': '1024px',
-        'xl': '1280px',
-        '2xl': '1536px',
-      },
-      colors: {
-        dark: {
-          bg: '#121212',
-          surface: '#1E1E1E',
-          text: '#E4E4E7'
-        }
+      animation: {
+        'gradient-x': 'gradient-x 15s ease infinite',
+        'float': 'float 3s ease-in-out infinite',
       },
       keyframes: {
-        shimmer: {
-          '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(100%)' }
+        'gradient-x': {
+          '0%, 100%': {
+            'background-size': '200% 200%',
+            'background-position': 'left center'
+          },
+          '50%': {
+            'background-size': '200% 200%',
+            'background-position': 'right center'
+          }
+        },
+        'float': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' }
         }
-      },
-      animation: {
-        shimmer: 'shimmer 2s infinite'
-      }
-    },
-    variants: {
-      extend: {
-        animation: ['hover', 'focus'],
       }
     }
   },
