@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, type ReactNode } from 'react';
 import { analytics } from '../services/analytics';
 
 interface Props {
@@ -20,7 +20,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error) {
-    analytics.trackError(error, 'ErrorBoundary: ' + errorInfo.componentStack);
+    analytics.trackError(error, 'ErrorBoundary error');
   }
 
   public render() {
