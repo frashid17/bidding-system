@@ -6,6 +6,8 @@ interface AdDisplayProps {
   revenue: number;
   impressions: number;
   ctr: number;
+  fillRate: number;
+  ecpm: number;
 }
 
 export const AdDisplay: React.FC<AdDisplayProps> = ({ size, revenue, impressions, ctr }) => {
