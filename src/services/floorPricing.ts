@@ -1,31 +1,5 @@
 import { DeviceType, getDeviceType } from '../utils/device';
 
-interface FloorConfig {
-  mediaType: string;
-  size: number[];
-  deviceType: DeviceType;
-  timeOfDay: number;
-}
-
-const BASE_FLOORS = {
-  banner: {
-    '300x250': 1.2,
-    '300x600': 1.8,
-    '728x90': 1.0,
-  }
-};
-
-const DEVICE_MULTIPLIERS = {
-  desktop: 1.0,
-  tablet: 0.8,
-  mobile: 0.6
-};
-
-const TIME_MULTIPLIERS = {
-  peak: 1.2,    // 8AM - 8PM
-  offPeak: 0.8  // 8PM - 8AM
-};
-
 export const getFloorPrice = (
   mediaType: string,
   size: number[],
