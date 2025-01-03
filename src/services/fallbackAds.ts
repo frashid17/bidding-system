@@ -1,5 +1,3 @@
-import { AdUnit } from '../types/prebid';
-
 interface FallbackAd {
   id: string;
   html: string;
