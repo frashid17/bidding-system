@@ -15,12 +15,12 @@ interface AdvertisementProps {
 export const Advertisement: React.FC<AdvertisementProps> = ({ adUnit }) => {
   const adRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(adRef);
-  const metrics = useAdTracking(adUnit.code);
+  const { timeoutId } = useAnalytics();
   
   useEffect(() => {
     if (!isInView) return;
 
-    let timeoutId: NodeJS.Timeout;
+    const timeoutId: number;
     
     const loadAd = async () => {
       try {
