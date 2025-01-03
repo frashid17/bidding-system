@@ -31,3 +31,7 @@ export const requestBids = async (adUnits: any[]): Promise<BidResponse[]> => {
 
   return validBids;
 };
+
+export const initializePrebid = (config: PrebidConfig) => {
+  // Implementation of initializePrebid
+};
