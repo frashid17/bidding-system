@@ -1,6 +1,17 @@
 import { sspProviders } from './ssp';
-import { BidRequest, BidResponse } from '../types/ssp';
+import { BidResponse, SSPProvider } from '../types/ssp';
 import { errorTracker } from './errorTracking';
+
+// Add interface for SSP providers that support initialization
+interface SSPProviderWithInit extends SSPProvider {
+  initialize(config: PrebidConfig): void;
+}
+
+// Module-level config
+let prebidConfig: PrebidConfig = {
+  siteId: 'your-site-id',
+  timeout: 1000
+};
 
 export const requestBids = async (adUnits: any[]): Promise<BidResponse[]> => {
   const bidRequests = adUnits.map(unit => ({
@@ -17,7 +28,7 @@ export const requestBids = async (adUnits: any[]): Promise<BidResponse[]> => {
     try {
       return await provider.requestBids(bidRequests[0]); // Assuming single ad unit for now
     } catch (error) {
-      errorTracker.trackError('sspError', `${provider.name} bid request failed`, { error });
+      errorTracker.trackError('bidError', `${provider.name} bid request failed`, { error });
       return [];
     }
   });
@@ -32,6 +43,28 @@ export const requestBids = async (adUnits: any[]): Promise<BidResponse[]> => {
   return validBids;
 };
 
+export interface PrebidConfig {
+  siteId?: string;
+  timeout?: number;
+}
+
 export const initializePrebid = (config: PrebidConfig) => {
-  // Implementation of initializePrebid
+  // Set default values if not provided
+  const defaultConfig = {
+    siteId: 'your-site-id',
+    timeout: 1000
+  };
+
+  // Merge provided config with defaults
+  prebidConfig = {
+    ...defaultConfig,
+    ...config
+  };
+
+  // Initialize SSP providers that support initialization
+  Object.values(sspProviders).forEach(provider => {
+    if ('initialize' in provider) {
+      (provider as SSPProviderWithInit).initialize(prebidConfig);
+    }
+  });
 };
