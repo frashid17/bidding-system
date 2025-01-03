@@ -34,13 +34,11 @@ export const Advertisement: React.FC<AdvertisementProps> = ({ adUnit }) => {
       if (fallbackAd && adRef.current) {
         adRef.current.innerHTML = fallbackAd.html;
       }
-    }, 3000); // 3 second timeout
+    }, 3000);
 
     const loadAd = async () => {
       try {
         const bids = await requestBids([adUnit]);
-        
-        // Validate bids
         const validBids = bids.filter(validateBid);
         if (validBids.length === 0) {
           throw new Error('No valid bids received');
@@ -53,7 +51,6 @@ export const Advertisement: React.FC<AdvertisementProps> = ({ adUnit }) => {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         errorTracker.trackError('bidError', errorMessage, { adUnit: adUnit.code });
         
-        // Load fallback ad
         const fallbackAd = getFallbackAd(`${adUnit.mediaTypes.banner.sizes[0][0]}x${adUnit.mediaTypes.banner.sizes[0][1]}`);
         if (fallbackAd && adRef.current) {
           adRef.current.innerHTML = fallbackAd.html;
@@ -73,7 +70,25 @@ export const Advertisement: React.FC<AdvertisementProps> = ({ adUnit }) => {
       <div 
         ref={adRef}
         id={adUnit.code}
-        className="w-full min-h-[250px] bg-gray-100 dark:bg-gray-800 rounded-lg shadow-sm"
+        className="
+          w-full mx-auto
+          min-h-[50px] max-w-[300px]
+          xs:min-h-[90px] xs:max-w-[320px]
+          sm:min-h-[250px] sm:max-w-[468px]
+          md:min-h-[90px] md:max-w-[728px]
+          lg:min-h-[250px] lg:max-w-[970px]
+          xl:max-w-[1200px]
+          bg-gray-100 dark:bg-gray-800 
+          rounded-lg shadow-sm 
+          overflow-hidden
+          transition-all duration-300 ease-in-out
+          hover:shadow-md
+          relative
+          flex items-center justify-center
+        "
+        style={{
+          aspectRatio: `${adUnit.mediaTypes.banner.sizes[0][0]} / ${adUnit.mediaTypes.banner.sizes[0][1]}`
+        }}
       />
     </ErrorBoundary>
   );
