@@ -32,5 +32,4 @@ class ErrorTracker {
     return [...this.errors].reverse();
   }
 }
-
 export const errorTracker = new ErrorTracker();

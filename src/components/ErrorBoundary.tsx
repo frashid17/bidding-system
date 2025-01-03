@@ -1,5 +1,7 @@
 import { Component, type ReactNode } from 'react';
-import { analytics } from '../services/analytics';
+import { Analytics } from '../services/analytics';
+
+const analytics = new Analytics();
 
 interface Props {
   children: ReactNode;
@@ -15,12 +17,17 @@ export class ErrorBoundary extends Component<Props, State> {
     hasError: false
   };
 
-  public static getDerivedStateFromError(_: Error): State {
+  public static getDerivedStateFromError(): State {
     return { hasError: true };
   }
 
-  public componentDidCatch(error: Error) {
-    analytics.trackError(error, 'ErrorBoundary error');
+  public componentDidCatch(_error: Error) {
+    analytics.trackEvent('error', {
+      bidId: 'error',
+      cpm: 0,
+      adUnitCode: 'error-boundary',
+      size: [0, 0]
+    });
   }
 
   public render() {
