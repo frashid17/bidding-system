@@ -28,8 +28,14 @@ export const Advertisement: React.FC<AdvertisementProps> = ({ adUnit }) => {
   useEffect(() => {
     if (!isInView) return;
 
-    let timeoutId: NodeJS.Timeout;
-    
+    const timeoutId = setTimeout(() => {
+      errorTracker.trackError('timeout', 'Bid request timeout', { adUnit: adUnit.code });
+      const fallbackAd = getFallbackAd(`${adUnit.mediaTypes.banner.sizes[0][0]}x${adUnit.mediaTypes.banner.sizes[0][1]}`);
+      if (fallbackAd && adRef.current) {
+        adRef.current.innerHTML = fallbackAd.html;
+      }
+    }, 3000); // 3 second timeout
+
     const loadAd = async () => {
       try {
         const bids = await requestBids([adUnit]);
@@ -54,15 +60,6 @@ export const Advertisement: React.FC<AdvertisementProps> = ({ adUnit }) => {
         }
       }
     };
-
-    // Set timeout for bid requests
-    timeoutId = setTimeout(() => {
-      errorTracker.trackError('timeout', 'Bid request timeout', { adUnit: adUnit.code });
-      const fallbackAd = getFallbackAd(`${adUnit.mediaTypes.banner.sizes[0][0]}x${adUnit.mediaTypes.banner.sizes[0][1]}`);
-      if (fallbackAd && adRef.current) {
-        adRef.current.innerHTML = fallbackAd.html;
-      }
-    }, 3000); // 3 second timeout
 
     loadAd();
 
