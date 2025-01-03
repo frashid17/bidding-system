@@ -11,8 +11,14 @@ export interface AdUnit {
       sizes: number[][];
     };
   };
-  bids: {
+  floors?: {
+    values: {
+      [key: string]: number;
+    };
+  };
+  bids: Array<{
     bidder: string;
-    params: any;
-  }[];
+    params: Record<string, any>;
+  }>;
+  getFloor?: () => any;
 }

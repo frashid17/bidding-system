@@ -10,10 +10,6 @@ export const adUnits: AdUnit[] = [
       }
     },
     floors: {
-      currency: 'USD',
-      schema: {
-        fields: ['mediaType', 'size', 'domain']
-      },
       values: {
         'banner|300x250|example.com': 1.20,
         'banner|300x600|example.com': 1.80
@@ -55,6 +51,8 @@ export const adUnits: AdUnit[] = [
         }
       }
     ],
-    getFloorData: () => getFloorPrice('banner', [300, 250], window.location.hostname)
+    getFloor: function() {
+      return getFloorPrice('banner', [300, 250]);
+    }
   }
 ];
