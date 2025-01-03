@@ -1,6 +1,26 @@
 import React, { useState } from 'react';
-import { LineChart, BarChart3, PieChart, ArrowUpRight, ArrowDownRight, TrendingUp, Filter } from 'lucide-react';
+import { 
+  LineChart, 
+  BarChart3, 
+  PieChart, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  TrendingUp, 
+  Filter,
+  Download,
+  RefreshCcw
+} from 'lucide-react';
 import { DashboardCard } from '../components/DashboardCard';
+import { 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar,
+  Legend
+} from 'recharts';
 
 interface BidderData {
   name: string;
@@ -14,6 +34,23 @@ interface BidderData {
   };
 }
 
+interface BidderTimeData {
+  hour: string;
+  AppNexus: number;
+  Rubicon: number;
+  OpenX: number;
+  PubMatic: number;
+}
+
+// Define the type for legend payload
+type LegendPayloadItem = {
+  value: string;
+  id?: string;
+  type?: string;
+  color?: string;
+  dataKey?: string | number | ((obj: any) => any);
+};
+
 export const Analytics: React.FC = () => {
   const [timeRange, setTimeRange] = useState('24h');
   const [sortConfig, setSortConfig] = useState<{
@@ -22,6 +59,18 @@ export const Analytics: React.FC = () => {
   }>({ key: 'revenue', direction: 'desc' });
   const [filterVisible, setFilterVisible] = useState(false);
   const [minRevenue, setMinRevenue] = useState<number>(0);
+  const [selectedMetric, setSelectedMetric] = useState<'revenue' | 'bids' | 'wins'>('revenue');
+
+  // Hourly data for the chart
+  const hourlyData: BidderTimeData[] = [
+    { hour: '00:00', AppNexus: 120, Rubicon: 80, OpenX: 60, PubMatic: 40 },
+    { hour: '04:00', AppNexus: 180, Rubicon: 120, OpenX: 90, PubMatic: 70 },
+    { hour: '08:00', AppNexus: 240, Rubicon: 160, OpenX: 120, PubMatic: 90 },
+    { hour: '12:00', AppNexus: 300, Rubicon: 200, OpenX: 150, PubMatic: 110 },
+    { hour: '16:00', AppNexus: 280, Rubicon: 180, OpenX: 140, PubMatic: 100 },
+    { hour: '20:00', AppNexus: 220, Rubicon: 140, OpenX: 110, PubMatic: 80 },
+    { hour: '23:59', AppNexus: 150, Rubicon: 100, OpenX: 80, PubMatic: 60 }
+  ];
 
   // Sample data for different time ranges
   const timeRangeData = {
@@ -119,10 +168,28 @@ export const Analytics: React.FC = () => {
 
   const [bidderData, setBidderData] = useState<BidderData[]>(timeRangeData['24h']);
 
-  // Update data when time range changes
   const handleTimeRangeChange = (range: string) => {
     setTimeRange(range);
     setBidderData(timeRangeData[range as keyof typeof timeRangeData]);
+  };
+
+  const handleExportData = () => {
+    const csvContent = [
+      ['Bidder', 'Bids', 'Wins', 'Revenue', 'Win Rate'].join(','),
+      ...sortedData.map(bidder => [
+        bidder.name,
+        bidder.bids,
+        bidder.wins,
+        bidder.revenue,
+        ((bidder.wins / bidder.bids) * 100).toFixed(1) + '%'
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `bidder-analytics-${timeRange}.csv`;
+    link.click();
   };
 
   const handleSort = (key: keyof BidderData | 'winRate') => {
@@ -157,6 +224,45 @@ export const Analytics: React.FC = () => {
     return null;
   };
 
+  // Add custom legend formatter
+  const renderLegend = (value: string) => {
+    return value.replace(/([A-Z])/g, ' $1').trim(); // Adds space before capital letters
+  };
+
+  // Add custom tooltip formatter
+  const formatTooltipValue = (value: number, name: string, metric: string) => {
+    if (metric === 'revenue') {
+      return [`$${value.toLocaleString()}`, name];
+    }
+    return [value.toLocaleString(), name];
+  };
+
+  // Add new state for visible bidders
+  const [visibleBidders, setVisibleBidders] = useState<{ [key: string]: boolean }>({
+    AppNexus: true,
+    Rubicon: true,
+    OpenX: true,
+    PubMatic: true
+  });
+
+  // Add legend click handler
+  const handleLegendClick = (entry: LegendPayloadItem) => {
+    if (!entry.dataKey) return;
+    
+    const dataKeyString = typeof entry.dataKey === 'function' 
+      ? 'function'
+      : String(entry.dataKey);
+      
+    setVisibleBidders(prev => {
+      const allFalse = Object.values({ ...prev, [dataKeyString]: !prev[dataKeyString] }).every(v => !v);
+      // If all would be false, reset to all true
+      if (allFalse) {
+        return Object.keys(prev).reduce((acc, key) => ({ ...acc, [key]: true }), {});
+      }
+      return { ...prev, [dataKeyString]: !prev[dataKeyString] };
+    });
+  };
+
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -166,7 +272,8 @@ export const Analytics: React.FC = () => {
             <select
               value={timeRange}
               onChange={(e) => handleTimeRangeChange(e.target.value)}
-              className="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 
+                dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             >
               <option value="24h">Last 24 Hours</option>
               <option value="7d">Last 7 Days</option>
@@ -174,9 +281,17 @@ export const Analytics: React.FC = () => {
             </select>
             <button
               onClick={() => setFilterVisible(!filterVisible)}
-              className="p-2 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="p-2 rounded-md border border-gray-300 dark:border-gray-600 
+                hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <Filter className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
+            <button
+              onClick={handleExportData}
+              className="p-2 rounded-md border border-gray-300 dark:border-gray-600 
+                hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <Download className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
         </div>
@@ -220,8 +335,140 @@ export const Analytics: React.FC = () => {
           />
         </div>
 
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Hourly Performance</h2>
+              <div className="flex space-x-4">
+                {['revenue', 'bids', 'wins'].map((metric) => (
+                  <button
+                    key={metric}
+                    onClick={() => setSelectedMetric(metric as typeof selectedMetric)}
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      selectedMetric === metric
+                        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
+                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    {metric.charAt(0).toUpperCase() + metric.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={hourlyData}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis 
+                    dataKey="hour" 
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                  />
+                  <YAxis 
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                    tickFormatter={(value) => selectedMetric === 'revenue' ? `$${value}` : value}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#F9FAFB',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '0.375rem'
+                    }}
+                    formatter={(value: number, name: string) => 
+                      formatTooltipValue(value, name, selectedMetric)
+                    }
+                  />
+                  <Legend 
+                    formatter={renderLegend}
+                    wrapperStyle={{
+                      paddingTop: '20px'
+                    }}
+                    onClick={(entry) => handleLegendClick(entry)}
+                  />
+                  {Object.keys(hourlyData[0])
+                    .filter(key => key !== 'hour')
+                    .map((bidder, index) => (
+                      <Bar
+                        key={bidder}
+                        dataKey={bidder}
+                        fill={`hsl(${index * 90}, 70%, 60%)`}
+                        stackId="stack"
+                        name={bidder}
+                        hide={!visibleBidders[bidder]}
+                      >
+                        <animate attributeName="opacity" from="0" to="1" dur="0s" />
+                        <animate attributeName="y" from="0" to="0" dur="0s" />
+                        <animate attributeName="height" from="0" to="0" dur="0s" />
+                      </Bar>
+                    ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Win Rate Analysis</h2>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={sortedData}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                  />
+                  <YAxis 
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#F9FAFB',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '0.375rem'
+                    }}
+                    formatter={(value: number) => [`${value.toFixed(1)}%`, 'Win Rate']}
+                  />
+                  <Legend 
+                    formatter={() => 'Win Rate'}
+                    wrapperStyle={{
+                      paddingTop: '20px'
+                    }}
+                  />
+                  <Bar
+                    dataKey={(data: BidderData) => ((data.wins / data.bids) * 100)}
+                    fill="#6366F1"
+                    name="Win Rate"
+                  >
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
         <div className="mt-8">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Bidder Performance</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white">Bidder Performance</h2>
+            <button
+              onClick={() => setBidderData([...bidderData])}
+              className="flex items-center gap-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-300 
+                hover:text-gray-900 dark:hover:text-white"
+            >
+              <RefreshCcw className="w-4 h-4" />
+              Refresh
+            </button>
+          </div>
           <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-800">
